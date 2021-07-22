@@ -25,13 +25,13 @@ class TopCampaignContent:
             end_dt = datetime.strptime(end, DATE_FORMAT)
         else:
             end_dt = datetime.now()
-            start_dt = end_dt - timedelta(days=28)
+            start_dt = end_dt - timedelta(days=36)
 
         date_range = []
         while start_dt <= end_dt:
             date_range.append(start_dt.strftime(DATE_FORMAT))
             start_dt = start_dt + timedelta(days=1)
-            return date_range
+        return date_range
 
     async def get_headers(self, sessions):
         endpoint = "oauth/token"
@@ -115,6 +115,7 @@ class TopCampaignContent:
         ) as sessions:
             headers = await self.get_headers(sessions)
             rows = await self.get(sessions, headers)
+            rows
             if len(rows) > 0:
                 rows = self.transform(rows)
                 loads = self.load(rows)
