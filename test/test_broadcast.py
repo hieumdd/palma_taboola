@@ -8,5 +8,4 @@ def test_broadcast():
     message = encode_data(data)
     req = Mock(get_json=Mock(return_value=message), args=message)
     res = main(req)
-    for i in res['results']:
-        assert i > 0
+    assert res['results']['message_sent'] > 0
