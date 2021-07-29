@@ -1,4 +1,14 @@
 {
+    "keys": {
+        "p_key": [
+            "item",
+            "campaign",
+            "content_provider",
+            "start_date",
+            "end_date"
+        ],
+        "incre_key": "last_used_rawdata_update_time"
+    },
     "schema": [
         {
             "name": "item",
