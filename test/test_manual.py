@@ -1,8 +1,8 @@
 from .utils import process
 
 
-START = "2021-06-01"
-END = "2021-07-01"
+START = "2021-07-01"
+END = "2021-07-28"
 
 
 def test_top_campaign_content():

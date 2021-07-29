@@ -2,7 +2,10 @@
     "keys": {
         "p_key": [
             "date",
-            "campaign"
+            "campaign",
+            "campaign_name",
+            "site",
+            "site_name"
         ],
         "incre_key": "last_used_rawdata_update_time"
     },
