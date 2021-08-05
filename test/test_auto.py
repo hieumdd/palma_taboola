@@ -13,3 +13,9 @@ def test_campaign_summary():
         "table": "CampaignSummary",
     }
     process(data)
+
+def test_campaign_summary_hourly():
+    data = {
+        "table": "CampaignSummaryHourly",
+    }
+    process(data)

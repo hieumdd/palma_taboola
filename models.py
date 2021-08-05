@@ -23,19 +23,13 @@ TEMPLATE_LOADER = jinja2.FileSystemLoader("./templates")
 TEMPLATE_ENV = jinja2.Environment(loader=TEMPLATE_LOADER)
 
 
-class Taboola(ABC):
-    @staticmethod
-    def factory(table, start, end):
-        args = (start, end)
-        if table == "TopCampaignContent":
-            return TopCampaignContent(*args)
-        elif table == "CampaignSummary":
-            return CampaignSummary(*args)
-
-    def __init__(self, start, end):
-        self.start, self.end = self.get_date_range(start, end)
+class Getter(ABC):
+    def __init__(self, start, end, endpoint):
+        self.start = start
+        self.end = end
+        self.endpoint = endpoint
+        self.url = f"{BASE_URL}/api/{API_VER}/{ACCOUNT_ID}/{self.endpoint}"
         self.headers = self.get_headers()
-        self.keys, self.schema = self.get_config()
 
     @staticmethod
     def get_headers():
@@ -55,6 +49,112 @@ class Taboola(ABC):
             "Content-type": "application/json",
         }
 
+    @abstractmethod
+    def get(self):
+        pass
+
+
+class MultiDayGetter(Getter):
+    def __init__(self, start, end, endpoint):
+        super().__init__(start, end, endpoint)
+
+    def get(self):
+        params = {
+            "start_date": self.start.strftime(DATE_FORMAT),
+            "end_date": self.end.strftime(DATE_FORMAT),
+        }
+        with requests.get(self.url, params=params, headers=self.headers) as r:
+            res = r.json()
+        return res
+
+
+class OneDayGetter(Getter):
+    def __init__(self, start, end, endpoint):
+        super().__init__(start, end, endpoint)
+
+    def get(self):
+        return asyncio.run(self._get())
+
+    async def _get(self):
+        date_range = []
+        start = self.start
+        while start <= self.end:
+            date_range.append(start.strftime(DATE_FORMAT))
+            start = start + timedelta(days=1)
+
+        connector = aiohttp.TCPConnector(limit=10)
+        timeout = aiohttp.ClientTimeout(total=540)
+        async with aiohttp.ClientSession(
+            connector=connector, timeout=timeout
+        ) as sessions:
+            tasks = [
+                asyncio.create_task(self._get_one(sessions, self.url, dt))
+                for dt in date_range
+            ]
+            rows = await asyncio.gather(*tasks)
+        return rows
+
+    async def _get_one(self, sessions, url, dt):
+        params = {"start_date": dt, "end_date": dt}
+        async with sessions.get(url, params=params, headers=self.headers) as r:
+            res = await r.json()
+        return res
+
+
+class Transformer(ABC):
+    @abstractmethod
+    def transform(self):
+        pass
+
+
+class OneDayTransformer(Transformer):
+    def transform(self, rows):
+        rows = [self._transform(i) for i in rows]
+        rows = [item for sublist in rows for item in sublist]
+        return rows
+
+    def _transform(self, row):
+        results = row["results"]
+        row = [
+            {
+                **i,
+                "start_date": row["metadata"]["start_date"],
+                "end_date": row["metadata"]["end_date"],
+                "last_used_rawdata_update_time": row["last-used-rawdata-update-time"],
+            }
+            for i in results
+        ]
+        return row
+
+
+class MultiDayTransformer(Transformer):
+    def transform(self, rows):
+        results = rows["results"]
+        row = [
+            {
+                **i,
+                "last_used_rawdata_update_time": rows["last-used-rawdata-update-time"],
+            }
+            for i in results
+        ]
+        return row
+
+
+class Taboola(ABC):
+    @staticmethod
+    def factory(table, start, end):
+        args = (start, end)
+        if table == "TopCampaignContent":
+            return TopCampaignContent(*args)
+        elif table == "CampaignSummary":
+            return CampaignSummary(*args)
+        elif table == "CampaignSummaryHourly":
+            return CampaignSummaryHourly(*args)
+
+    def __init__(self, start, end):
+        self.start, self.end = self.get_date_range(start, end)
+        self.keys, self.schema = self.get_config()
+
     @staticmethod
     def get_date_range(_start, _end):
         if _start and _end:
@@ -69,14 +169,6 @@ class Taboola(ABC):
         with open(f"configs/{self.table}.json", "r") as f:
             config = json.load(f)
         return config["keys"], config["schema"]
-
-    @abstractmethod
-    def get(self):
-        pass
-
-    @abstractmethod
-    def transform(self):
-        pass
 
     def load(self, rows):
         return BQ_CLIENT.load_table_from_json(
@@ -100,14 +192,14 @@ class Taboola(ABC):
         BQ_CLIENT.query(rendered_query)
 
     def run(self):
-        rows = self.get()
+        rows = self.getter.get()
         responses = {
             "table": self.table,
             "start": self.start.strftime(DATE_FORMAT),
             "end": self.end.strftime(DATE_FORMAT),
         }
         if len(rows) > 0:
-            rows = self.transform(rows)
+            rows = self.transformer.transform(rows)
             loads = self.load(rows)
             self.update()
             responses = {
@@ -123,55 +215,12 @@ class TopCampaignContent(Taboola):
 
     def __init__(self, start, end):
         super().__init__(start, end)
-
-    def get(self):
-        return asyncio.run(self._get())
-
-    async def _get(self):
-        date_range = []
-        start = self.start
-        while start <= self.end:
-            date_range.append(start.strftime(DATE_FORMAT))
-            start = start + timedelta(days=1)
-
-        endpoint = "reports/top-campaign-content/dimensions/item_breakdown"
-        url = f"{BASE_URL}/api/{API_VER}/{ACCOUNT_ID}/{endpoint}"
-
-        connector = aiohttp.TCPConnector(limit=20)
-        timeout = aiohttp.ClientTimeout(total=540)
-        async with aiohttp.ClientSession(
-            connector=connector, timeout=timeout
-        ) as sessions:
-            tasks = [
-                asyncio.create_task(self._get_one(sessions, url, dt))
-                for dt in date_range
-            ]
-            rows = await asyncio.gather(*tasks)
-        return rows
-
-    async def _get_one(self, sessions, url, dt):
-        params = {"start_date": dt, "end_date": dt}
-        async with sessions.get(url, params=params, headers=self.headers) as r:
-            res = await r.json()
-        return res
-
-    def transform(self, rows):
-        rows = [self._transform(i) for i in rows]
-        rows = [item for sublist in rows for item in sublist]
-        return rows
-
-    def _transform(self, row):
-        results = row["results"]
-        row = [
-            {
-                **i,
-                "start_date": row["metadata"]["start_date"],
-                "end_date": row["metadata"]["end_date"],
-                "last_used_rawdata_update_time": row["last-used-rawdata-update-time"],
-            }
-            for i in results
-        ]
-        return row
+        self.getter = OneDayGetter(
+            self.start,
+            self.end,
+            "reports/top-campaign-content/dimensions/item_breakdown",
+        )
+        self.transformer = OneDayTransformer()
 
 
 class CampaignSummary(Taboola):
@@ -179,25 +228,20 @@ class CampaignSummary(Taboola):
 
     def __init__(self, start, end):
         super().__init__(start, end)
+        self.getter = MultiDayGetter(
+            self.start,
+            self.end,
+            "reports/campaign-summary/dimensions/campaign_site_day_breakdown",
+        )
+        self.transformer = MultiDayTransformer()
 
-    def get(self):
-        endpoint = "reports/campaign-summary/dimensions/campaign_site_day_breakdown"
-        url = f"{BASE_URL}/api/{API_VER}/{ACCOUNT_ID}/{endpoint}"
-        params = {
-            "start_date": self.start.strftime(DATE_FORMAT),
-            "end_date": self.end.strftime(DATE_FORMAT),
-        }
-        with requests.get(url, params=params, headers=self.headers) as r:
-            res = r.json()
-        return res
 
-    def transform(self, rows):
-        results = rows["results"]
-        row = [
-            {
-                **i,
-                "last_used_rawdata_update_time": rows["last-used-rawdata-update-time"],
-            }
-            for i in results
-        ]
-        return row
+class CampaignSummaryHourly(Taboola):
+    table = "CampaignSummaryHourly"
+
+    def __init__(self, start, end):
+        super().__init__(start, end)
+        self.getter = OneDayGetter(
+            self.start, self.end, "reports/campaign-summary/dimensions/by_hour_of_day"
+        )
+        self.transformer = OneDayTransformer()

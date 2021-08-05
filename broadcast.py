@@ -9,6 +9,7 @@ def broadcast(broadcast_data):
     tables = [
         "TopCampaignContent",
         "CampaignSummary",
+        "CampaignSummaryHourly",
     ]
 
     for table in tables:
