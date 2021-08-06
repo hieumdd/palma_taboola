@@ -68,7 +68,7 @@ class MultiDayGetter(Getter):
         return res
 
 
-class OneDayGetter(Getter):
+class SingleDayGetter(Getter):
     def __init__(self, start, end, endpoint):
         super().__init__(start, end, endpoint)
 
@@ -79,7 +79,7 @@ class OneDayGetter(Getter):
         date_range = []
         start = self.start
         while start <= self.end:
-            date_range.append(start.strftime(DATE_FORMAT))
+            date_range.append(start)
             start = start + timedelta(days=1)
 
         connector = aiohttp.TCPConnector(limit=10)
@@ -95,10 +95,34 @@ class OneDayGetter(Getter):
         return rows
 
     async def _get_one(self, sessions, url, dt):
-        params = {"start_date": dt, "end_date": dt}
+        params = self.get_params(dt)
         async with sessions.get(url, params=params, headers=self.headers) as r:
             res = await r.json()
         return res
+
+    @abstractmethod
+    def get_params(self, dt):
+        pass
+
+class OneDayGetter(SingleDayGetter):
+    def __init__(self, start, end, endpoint):
+        super().__init__(start, end, endpoint)
+
+    def get_params(self, dt):
+        return {
+            "start_date": dt.strftime(DATE_FORMAT),
+            "end_date": (dt + timedelta(days=1)).strftime(DATE_FORMAT),
+        }
+
+class FullDayGetter(SingleDayGetter):
+    def __init__(self, start, end, endpoint):
+        super().__init__(start, end, endpoint)
+
+    def get_params(self, dt):
+        return {
+            "start_date": dt.strftime(DATE_FORMAT),
+            "end_date": dt.strftime(DATE_FORMAT),
+        }
 
 
 class Transformer(ABC):
@@ -107,7 +131,7 @@ class Transformer(ABC):
         pass
 
 
-class OneDayTransformer(Transformer):
+class SingleDayTransformer(Transformer):
     def transform(self, rows):
         rows = [self._transform(i) for i in rows]
         rows = [item for sublist in rows for item in sublist]
@@ -220,7 +244,7 @@ class TopCampaignContent(Taboola):
             self.end,
             "reports/top-campaign-content/dimensions/item_breakdown",
         )
-        self.transformer = OneDayTransformer()
+        self.transformer = SingleDayTransformer()
 
 
 class CampaignSummary(Taboola):
@@ -242,6 +266,8 @@ class CampaignSummaryHourly(Taboola):
     def __init__(self, start, end):
         super().__init__(start, end)
         self.getter = OneDayGetter(
-            self.start, self.end, "reports/campaign-summary/dimensions/by_hour_of_day"
+            self.start,
+            self.end,
+            "reports/campaign-summary/dimensions/campaign_hour_breakdown",
         )
-        self.transformer = OneDayTransformer()
+        self.transformer = SingleDayTransformer()

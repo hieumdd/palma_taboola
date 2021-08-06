@@ -1,17 +1,23 @@
 {
     "keys": {
         "p_key": [
-            "date",
             "campaign",
             "campaign_name",
-            "site",
-            "site_name"
+            "date"
         ],
         "incre_key": "last_used_rawdata_update_time"
     },
     "schema": [
         {
-            "name": "hour_of_day",
+            "name": "date",
+            "type": "TIMESTAMP"
+        },
+        {
+            "name": "campaign_name",
+            "type": "STRING"
+        },
+        {
+            "name": "campaign",
             "type": "STRING"
         },
         {
