@@ -239,7 +239,7 @@ class TopCampaignContent(Taboola):
 
     def __init__(self, start, end):
         super().__init__(start, end)
-        self.getter = OneDayGetter(
+        self.getter = FullDayGetter(
             self.start,
             self.end,
             "reports/top-campaign-content/dimensions/item_breakdown",
