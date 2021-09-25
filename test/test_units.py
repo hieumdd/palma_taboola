@@ -11,6 +11,7 @@ from main import main
         "TopCampaignContent",
         "CampaignSummary",
         "CampaignSummaryHourly",
+        "CampaignSummaryCountry",
     ],
 )
 @pytest.mark.parametrize(

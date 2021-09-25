@@ -35,16 +35,19 @@ def get_headers():
 
 def get_date_range(start, end):
     if start and end:
-        _start, _end = [datetime.strptime(i, DATE_FORMAT) for i in (start, end)]
+        if isinstance(start, datetime):
+            _start, _end = start, end
+        else:
+            _start, _end = [datetime.strptime(i, DATE_FORMAT) for i in (start, end)]
     else:
         _start, _end = [NOW - timedelta(days=36), NOW]
     return _start, _end
 
 
 class Getter(ABC):
-    def __init__(self, model):
-        self.start, self.end = get_date_range(model.start, model.end)
-        self.endpoint = model.endpoint
+    def __init__(self, start, end, endpoint):
+        self.start, self.end = get_date_range(start, end)
+        self.endpoint = endpoint
         self.url = f"{BASE_URL}/api/{API_VER}/{ACCOUNT_ID}/{self.endpoint}"
         self.headers = get_headers()
 
@@ -114,3 +117,49 @@ class FullDayGetter(SingleDayGetter):
             "start_date": dt.strftime(DATE_FORMAT),
             "end_date": dt.strftime(DATE_FORMAT),
         }
+
+
+class CampaignFilterGetter(Getter):
+    def get(self):
+        campaign_date = self._get_campaign_date()
+        return asyncio.run(self._get_data(campaign_date))
+
+    def _get_campaign_date(self):
+        multi_day_getter = MultiDayGetter(
+            self.start,
+            self.end,
+            "reports/campaign-summary/dimensions/campaign_day_breakdown",
+        )
+        results = multi_day_getter.get()['results']
+        return [
+            {
+                "date": datetime.strptime(i["date"], "%Y-%m-%d %H:%M:%S.%f"),
+                "campaign": i["campaign"],
+            }
+            for i in results
+        ]
+
+    async def _get_data(self, campaign_date):
+        connector = aiohttp.TCPConnector(limit=10)
+        timeout = aiohttp.ClientTimeout(total=3600)
+        async with aiohttp.ClientSession(
+            connector=connector,
+            timeout=timeout,
+        ) as session:
+            tasks = [asyncio.create_task(self._get_one(session, i)) for i in campaign_date]
+            rows = await asyncio.gather(*tasks)
+        return rows
+
+    async def _get_one(self, session, filter_):
+        async with session.get(
+            self.url,
+            params={
+                "start_date": filter_['date'].strftime(DATE_FORMAT),
+                "end_date": (filter_['date'] + timedelta(days=1)).strftime(DATE_FORMAT),
+                "campaign": filter_['campaign'],
+            },
+            headers=self.headers,
+        ) as r:
+            x = await r.text()
+            res = await r.json()
+        return res

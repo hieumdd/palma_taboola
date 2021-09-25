@@ -18,8 +18,7 @@ class Taboola(ABC):
             raise ValueError(table)
 
     def __init__(self, start, end):
-        self.start, self.end = start, end
-        self._getter = self.getter(self)
+        self._getter = self.getter(start, end, self.endpoint)
 
     @abstractmethod
     def _transform(self, results):
