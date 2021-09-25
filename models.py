@@ -104,6 +104,7 @@ class SingleDayGetter(Getter):
     def get_params(self, dt):
         pass
 
+
 class OneDayGetter(SingleDayGetter):
     def __init__(self, start, end, endpoint):
         super().__init__(start, end, endpoint)
@@ -113,6 +114,7 @@ class OneDayGetter(SingleDayGetter):
             "start_date": dt.strftime(DATE_FORMAT),
             "end_date": (dt + timedelta(days=1)).strftime(DATE_FORMAT),
         }
+
 
 class FullDayGetter(SingleDayGetter):
     def __init__(self, start, end, endpoint):
@@ -145,6 +147,48 @@ class SingleDayTransformer(Transformer):
                 "start_date": row["metadata"]["start_date"],
                 "end_date": row["metadata"]["end_date"],
                 "last_used_rawdata_update_time": row["last-used-rawdata-update-time"],
+            }
+            for i in results
+        ]
+
+        return row
+
+
+class TopCampaignTransformer(SingleDayTransformer):
+    def _transform(self, row):
+        results = row["results"]
+        row = [
+            {
+                "item": i.get("item"),
+                "item_name": i.get("item_name"),
+                "description": i.get("description"),
+                "thumbnail_url": i.get("thumbnail_url"),
+                "url": i.get("url"),
+                "campaign": i.get("campaign"),
+                "campaign_name": i.get("campaign_name"),
+                "content_provider": i.get("content_provider"),
+                "content_provider_name": i.get("content_provider_name"),
+                "impressions": i.get("impressions"),
+                "visible_impressions": i.get("visible_impressions"),
+                "ctr": i.get("ctr"),
+                "vctr": i.get("vctr"),
+                "clicks": i.get("clicks"),
+                "cpc": i.get("cpc"),
+                "cvr": i.get("cvr"),
+                "cpa": i.get("cpa"),
+                "actions": i.get("actions"),
+                "cpm": i.get("cpm"),
+                "vcpm": i.get("vcpm"),
+                "spent": i.get("spent"),
+                "conversions_value": i.get("conversions_value"),
+                "roas": i.get("roas"),
+                "currency": i.get("currency"),
+                "learning_display_status": i.get("learning_display_status"),
+                "start_date": i.get("start_date"),
+                "end_date": i.get("end_date"),
+                "last_used_rawdata_update_time": i.get("last_used_rawdata_update_time"),
+                "start_date": row["metadata"]["start_date"],
+                "end_date": row["metadata"]["end_date"],
             }
             for i in results
         ]
@@ -244,7 +288,7 @@ class TopCampaignContent(Taboola):
             self.end,
             "reports/top-campaign-content/dimensions/item_breakdown",
         )
-        self.transformer = SingleDayTransformer()
+        self.transformer = TopCampaignTransformer()
 
 
 class CampaignSummary(Taboola):
