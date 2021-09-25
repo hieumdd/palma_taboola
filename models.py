@@ -157,7 +157,7 @@ class SingleDayTransformer(Transformer):
 class TopCampaignTransformer(SingleDayTransformer):
     def _transform(self, row):
         results = row["results"]
-        row = [
+        rows = [
             {
                 "item": i.get("item"),
                 "item_name": i.get("item_name"),
@@ -186,13 +186,13 @@ class TopCampaignTransformer(SingleDayTransformer):
                 "learning_display_status": i.get("learning_display_status"),
                 "start_date": i.get("start_date"),
                 "end_date": i.get("end_date"),
-                "last_used_rawdata_update_time": i.get("last_used_rawdata_update_time"),
+                "last_used_rawdata_update_time": row['last-used-rawdata-update-time'],
                 "start_date": row["metadata"]["start_date"],
                 "end_date": row["metadata"]["end_date"],
             }
             for i in results
         ]
-        return row
+        return rows
 
 
 class MultiDayTransformer(Transformer):
@@ -257,7 +257,7 @@ class Taboola(ABC):
             p_key=",".join(self.keys.get("p_key")),
             incre_key=self.keys.get("incre_key"),
         )
-        BQ_CLIENT.query(rendered_query)
+        BQ_CLIENT.query(rendered_query).result()
 
     def run(self):
         rows = self.getter.get()
