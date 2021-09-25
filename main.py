@@ -1,7 +1,7 @@
 import json
 import base64
 
-from models import Taboola
+from models.models import Taboola
 from broadcast import broadcast
 
 
