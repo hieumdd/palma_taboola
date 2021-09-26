@@ -12,6 +12,7 @@ from main import main
         "CampaignSummary",
         "CampaignSummaryHourly",
         "CampaignSummaryCountry",
+        "CampaignSummaryOSFamily",
     ],
 )
 @pytest.mark.parametrize(
