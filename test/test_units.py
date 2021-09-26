@@ -13,6 +13,7 @@ from main import main
         "CampaignSummaryHourly",
         "CampaignSummaryCountry",
         "CampaignSummaryOSFamily",
+        "CampaignSummaryBrowser",
     ],
 )
 @pytest.mark.parametrize(
