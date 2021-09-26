@@ -4,7 +4,6 @@ from components.transformer import SingleDayTransformer
 
 
 class TopCampaignContent(Taboola):
-    table = "TopCampaignContent"
     endpoint = "reports/top-campaign-content/dimensions/item_breakdown"
     getter = FullDayGetter
     transformer = SingleDayTransformer

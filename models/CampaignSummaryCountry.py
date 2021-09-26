@@ -4,7 +4,6 @@ from components.transformer import CampaignFilterTransformer
 
 
 class CampaignSummaryCountry(Taboola):
-    table = "CampaignSummaryCountry"
     endpoint = "reports/campaign-summary/dimensions/country_breakdown"
     getter = CampaignFilterGetter
     transformer = CampaignFilterTransformer

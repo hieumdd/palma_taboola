@@ -10,11 +10,6 @@ DATASET = "Palma"
 class Taboola(ABC):
     @property
     @abstractmethod
-    def table(self):
-        pass
-
-    @property
-    @abstractmethod
     def endpoint(self):
         pass
 
@@ -48,6 +43,7 @@ class Taboola(ABC):
             raise ValueError(table)
 
     def __init__(self, start, end):
+        self.table = self.__class__.__name__
         self._getter = self.getter(start, end, self.endpoint)
         self._transformer = self.transformer(self.schema)
 

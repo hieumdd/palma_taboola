@@ -4,7 +4,6 @@ from components.transformer import SingleDayTransformer
 
 
 class CampaignSummaryHourly(Taboola):
-    table = "CampaignSummaryHourly"
     endpoint = "reports/campaign-summary/dimensions/campaign_hour_breakdown"
     getter = OneDayGetter
     transformer = SingleDayTransformer
