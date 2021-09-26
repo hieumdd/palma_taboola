@@ -1,11 +1,13 @@
 from models.models import Taboola
 from components.getter import OneDayGetter
+from components.transformer import SingleDayTransformer
 
 
 class CampaignSummaryHourly(Taboola):
     table = "CampaignSummaryHourly"
     endpoint = "reports/campaign-summary/dimensions/campaign_hour_breakdown"
     getter = OneDayGetter
+    transformer = SingleDayTransformer
     keys = {
         "p_key": [
             "campaign",
@@ -38,39 +40,3 @@ class CampaignSummaryHourly(Taboola):
         {"name": "end_date", "type": "TIMESTAMP"},
         {"name": "last_used_rawdata_update_time", "type": "TIMESTAMP"},
     ]
-
-    def _transform(self, results):
-        rows = [self._transform_one(i) for i in results]
-        return [item for sublist in rows for item in sublist]
-
-    def _transform_one(self, result):
-        rows = result["results"]
-        return [
-            {
-                "date": row["date"],
-                "campaign_name": row["campaign_name"],
-                "campaign": row["campaign"],
-                "clicks": row["clicks"],
-                "impressions": row["impressions"],
-                "visible_impressions": row["visible_impressions"],
-                "spent": row["spent"],
-                "conversions_value": row["conversions_value"],
-                "roas": row["roas"],
-                "ctr": row["ctr"],
-                "vctr": row["vctr"],
-                "cpm": row["cpm"],
-                "vcpm": row["vcpm"],
-                "cpc": row["cpc"],
-                "campaigns_num": row["campaigns_num"],
-                "cpa": row["cpa"],
-                "cpa_actions_num": row["cpa_actions_num"],
-                "cpa_conversion_rate": row["cpa_conversion_rate"],
-                "currency": row["currency"],
-                "start_date": result["metadata"]["start_date"],
-                "end_date": result["metadata"]["end_date"],
-                "last_used_rawdata_update_time": result[
-                    "last-used-rawdata-update-time"
-                ],
-            }
-            for row in rows
-        ]

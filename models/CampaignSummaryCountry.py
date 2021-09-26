@@ -1,11 +1,13 @@
 from models.models import Taboola
 from components.getter import CampaignFilterGetter
+from components.transformer import CampaignFilterTransformer
 
 
 class CampaignSummaryCountry(Taboola):
     table = "CampaignSummaryCountry"
     endpoint = "reports/campaign-summary/dimensions/country_breakdown"
     getter = CampaignFilterGetter
+    transformer = CampaignFilterTransformer
     keys = {
         "p_key": [
             "start_date",
@@ -40,39 +42,3 @@ class CampaignSummaryCountry(Taboola):
         {"name": "end_date", "type": "TIMESTAMP"},
         {"name": "last_used_rawdata_update_time", "type": "TIMESTAMP"},
     ]
-
-    def _transform(self, results):
-        rows = [self._transform_one(i) for i in results]
-        return [item for sublist in rows for item in sublist]
-
-    def _transform_one(self, result):
-        rows = result["results"]
-        return [
-            {
-                "country": row["country"],
-                "country_name": row["country_name"],
-                "clicks": row["clicks"],
-                "impressions": row["impressions"],
-                "visible_impressions": row["visible_impressions"],
-                "spent": row["spent"],
-                "conversions_value": row["conversions_value"],
-                "roas": row["roas"],
-                "ctr": row["ctr"],
-                "vctr": row["vctr"],
-                "cpm": row["cpm"],
-                "vcpm": row["vcpm"],
-                "cpc": row["cpc"],
-                "campaigns_num": row["campaigns_num"],
-                "cpa": row["cpa"],
-                "cpa_actions_num": row["cpa_actions_num"],
-                "cpa_conversion_rate": row["cpa_conversion_rate"],
-                "currency": row["currency"],
-                "campaign": result["campaign"],
-                "start_date": result["metadata"]["start_date"],
-                "end_date": result["metadata"]["end_date"],
-                "last_used_rawdata_update_time": result[
-                    "last-used-rawdata-update-time"
-                ],
-            }
-            for row in rows
-        ]

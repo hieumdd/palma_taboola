@@ -8,6 +8,36 @@ DATASET = "Palma"
 
 
 class Taboola(ABC):
+    @property
+    @abstractmethod
+    def table(self):
+        pass
+
+    @property
+    @abstractmethod
+    def endpoint(self):
+        pass
+
+    @property
+    @abstractmethod
+    def keys(self):
+        pass
+
+    @property
+    @abstractmethod
+    def schema(self):
+        pass
+
+    @property
+    @abstractmethod
+    def getter(self):
+        pass
+
+    @property
+    @abstractmethod
+    def transformer(self):
+        pass
+
     @staticmethod
     def factory(table, start, end):
         try:
@@ -19,10 +49,7 @@ class Taboola(ABC):
 
     def __init__(self, start, end):
         self._getter = self.getter(start, end, self.endpoint)
-
-    @abstractmethod
-    def _transform(self, results):
-        pass
+        self._transformer = self.transformer(self.schema)
 
     def _load(self, rows):
         output_rows = (
@@ -66,7 +93,7 @@ class Taboola(ABC):
             "end": self._getter.start,
         }
         if results:
-            rows = self._transform(results)
+            rows = self._transformer.transform(results)
             response = {
                 **response,
                 "num_processed": len(rows),

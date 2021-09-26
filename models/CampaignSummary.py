@@ -1,11 +1,13 @@
 from models.models import Taboola
 from components.getter import MultiDayGetter
+from components.transformer import MultiDayTransformer
 
 
 class CampaignSummary(Taboola):
     table = "CampaignSummary"
     endpoint = "reports/campaign-summary/dimensions/campaign_site_day_breakdown"
     getter = MultiDayGetter
+    transformer = MultiDayTransformer
     keys = {
         "p_key": [
             "date",
@@ -41,36 +43,3 @@ class CampaignSummary(Taboola):
         {"name": "currency", "type": "STRING"},
         {"name": "last_used_rawdata_update_time", "type": "TIMESTAMP"},
     ]
-
-    def _transform(self, results):
-        rows = results["results"]
-        return [
-            {
-                "date": row["date"],
-                "site": row["site"],
-                "site_name": row["site_name"],
-                "site_id": row["site_id"],
-                "campaign": row["campaign"],
-                "campaign_name": row["campaign_name"],
-                "clicks": row["clicks"],
-                "impressions": row["impressions"],
-                "visible_impressions": row["visible_impressions"],
-                "spent": row["spent"],
-                "conversions_value": row["conversions_value"],
-                "roas": row["roas"],
-                "ctr": row["ctr"],
-                "vctr": row["vctr"],
-                "cpm": row["cpm"],
-                "vcpm": row["vcpm"],
-                "cpc": row["cpc"],
-                "cpa": row["cpa"],
-                "cpa_actions_num": row["cpa_actions_num"],
-                "cpa_conversion_rate": row["cpa_conversion_rate"],
-                "blocking_level": row["blocking_level"],
-                "currency": row["currency"],
-                "last_used_rawdata_update_time": results[
-                    "last-used-rawdata-update-time"
-                ],
-            }
-            for row in rows
-        ]
