@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import datetime, timedelta
 import asyncio
 from abc import ABC, abstractmethod
@@ -84,18 +85,27 @@ class SingleDayGetter(Getter):
         async with aiohttp.ClientSession(
             connector=connector,
             timeout=timeout,
-        ) as sessions:
+        ) as session:
             tasks = [
-                asyncio.create_task(self._get_one(sessions, self.url, dt))
-                for dt in date_range
+                asyncio.create_task(self._get_one(session, dt)) for dt in date_range
             ]
             rows = await asyncio.gather(*tasks)
         return rows
 
-    async def _get_one(self, sessions, url, dt):
-        params = self._get_params(dt)
-        async with sessions.get(url, params=params, headers=self.headers) as r:
-            res = await r.json()
+    async def _get_one(self, session, dt, attempt=0):
+        try:
+            async with session.get(
+                self.url,
+                params=self._get_params(dt),
+                headers=self.headers,
+            ) as r:
+                res = await r.json()
+        except json.JSONDecodeError as e:
+            if attempt < 5:
+                asyncio.sleep(2)
+                return self._get_one(session, dt, attempt + 1)
+            else:
+                raise e
         return res
 
     @abstractmethod
@@ -130,7 +140,7 @@ class CampaignFilterGetter(Getter):
             self.end,
             "reports/campaign-summary/dimensions/campaign_day_breakdown",
         )
-        results = multi_day_getter.get()['results']
+        results = multi_day_getter.get()["results"]
         return [
             {
                 "date": datetime.strptime(i["date"], "%Y-%m-%d %H:%M:%S.%f"),
@@ -146,20 +156,34 @@ class CampaignFilterGetter(Getter):
             connector=connector,
             timeout=timeout,
         ) as session:
-            tasks = [asyncio.create_task(self._get_one(session, i)) for i in campaign_date]
+            tasks = [
+                asyncio.create_task(self._get_one(session, i))
+                for i in campaign_date[:5]
+            ]
             rows = await asyncio.gather(*tasks)
         return rows
 
-    async def _get_one(self, session, filter_):
-        async with session.get(
-            self.url,
-            params={
-                "start_date": filter_['date'].strftime(DATE_FORMAT),
-                "end_date": (filter_['date'] + timedelta(days=1)).strftime(DATE_FORMAT),
-                "campaign": filter_['campaign'],
-            },
-            headers=self.headers,
-        ) as r:
-            x = await r.text()
-            res = await r.json()
-        return res
+    async def _get_one(self, session, filter_, attempt=0):
+        try:
+            async with session.get(
+                self.url,
+                params={
+                    "start_date": filter_["date"].strftime(DATE_FORMAT),
+                    "end_date": (filter_["date"] + timedelta(days=1)).strftime(
+                        DATE_FORMAT
+                    ),
+                    "campaign": filter_["campaign"],
+                },
+                headers=self.headers,
+            ) as r:
+                res = await r.json()
+                return {
+                    **res,
+                    "campaign": filter_["campaign"],
+                }
+        except json.JSONDecodeError as e:
+            if attempt < 5:
+                asyncio.sleep(2)
+                return self._get_one(session, filter_, attempt + 1)
+            else:
+                raise e
