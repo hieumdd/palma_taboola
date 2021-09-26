@@ -85,8 +85,8 @@ class Taboola(ABC):
         results = self._getter.get()
         response = {
             "table": self.table,
-            "start": self._getter.start,
-            "end": self._getter.start,
+            "start": self._getter.start.isoformat(timespec='seconds'),
+            "end": self._getter.end.isoformat(timespec='seconds'),
         }
         if results:
             rows = self._transformer.transform(results)
