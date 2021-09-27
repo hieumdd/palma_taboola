@@ -8,9 +8,9 @@ from main import main
 @pytest.mark.parametrize(
     "table",
     [
-        "TopCampaignContent",
-        "CampaignSummary",
-        "CampaignSummaryHourly",
+        # "TopCampaignContent",
+        # "CampaignSummary",
+        # "CampaignSummaryHourly",
         "CampaignSummaryCountry",
         "CampaignSummaryOSFamily",
         "CampaignSummaryBrowser",
@@ -23,11 +23,11 @@ from main import main
     ),
     [
         (None, None),
-        ("2021-08-20", "2021-09-20"),
+        # ("2021-08-20", "2021-09-20"),
     ],
     ids=[
         "auto",
-        "manual",
+        # "manual",
     ],
 )
 def test_pipelines(table, start, end):

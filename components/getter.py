@@ -100,10 +100,10 @@ class SingleDayGetter(Getter):
                 headers=self.headers,
             ) as r:
                 res = await r.json()
-        except json.JSONDecodeError as e:
+        except aiohttp.client_exceptions.ContentTypeError as e:
             if attempt < 5:
                 asyncio.sleep(2)
-                return self._get_one(session, dt, attempt + 1)
+                return await self._get_one(session, dt, attempt + 1)
             else:
                 raise e
         return res
@@ -157,8 +157,7 @@ class CampaignFilterGetter(Getter):
             timeout=timeout,
         ) as session:
             tasks = [
-                asyncio.create_task(self._get_one(session, i))
-                for i in campaign_date[:5]
+                asyncio.create_task(self._get_one(session, i)) for i in campaign_date
             ]
             rows = await asyncio.gather(*tasks)
         return rows
@@ -169,9 +168,7 @@ class CampaignFilterGetter(Getter):
                 self.url,
                 params={
                     "start_date": filter_["date"].strftime(DATE_FORMAT),
-                    "end_date": (filter_["date"] + timedelta(days=1)).strftime(
-                        DATE_FORMAT
-                    ),
+                    "end_date": filter_["date"].strftime(DATE_FORMAT),
                     "campaign": filter_["campaign"],
                 },
                 headers=self.headers,
@@ -181,9 +178,9 @@ class CampaignFilterGetter(Getter):
                     **res,
                     "campaign": filter_["campaign"],
                 }
-        except json.JSONDecodeError as e:
+        except aiohttp.client_exceptions.ContentTypeError as e:
             if attempt < 5:
                 asyncio.sleep(2)
-                return self._get_one(session, filter_, attempt + 1)
+                return await self._get_one(session, filter_, attempt + 1)
             else:
                 raise e
