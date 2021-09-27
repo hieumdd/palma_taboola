@@ -10,6 +10,7 @@ aiohttp = "^3.7.4"
 requests = "^2.26.0"
 google-cloud-bigquery = "^2.26.0"
 google-cloud-pubsub = "^2.8.0"
+functions-framework = "^2.2.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"

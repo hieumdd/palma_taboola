@@ -3,8 +3,6 @@ services:
     image: palma-taboola:latest
     build:
       context: .
-      args:
-        BUILD_ENV: prod
     container_name: palma-taboola
     volumes:
       - ./creds/${CREDS_FILENAME}.json:/tmp/${CREDS_FILENAME}.json
