@@ -12,8 +12,9 @@ from main import main
         "CampaignSummary",
         "CampaignSummaryHourly",
         "CampaignSummaryCountry",
-        "CampaignSummaryOSFamily",
         "CampaignSummaryBrowser",
+        "CampaignSummaryOSFamily",
+        "CampaignSummaryOSVersion",
     ],
 )
 @pytest.mark.parametrize(
