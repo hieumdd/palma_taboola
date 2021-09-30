@@ -5,3 +5,4 @@
 .pytest*
 __pycache__
 creds
+test

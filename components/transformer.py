@@ -46,7 +46,7 @@ class SingleDayTransformer(Transformer):
 class MultiDayTransformer(Transformer):
     def transform(self, results):
         rows = results["results"]
-        rows = [
+        return [
             {
                 **{
                     i: row[i]
@@ -65,8 +65,6 @@ class MultiDayTransformer(Transformer):
             }
             for row in rows
         ]
-        return rows
-
 
 class CampaignFilterTransformer(SingleDayTransformer):
     def _transform_one(self, result):

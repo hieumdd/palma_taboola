@@ -9,6 +9,7 @@ env:
   PROJECT_ID: ${{ secrets.PROJECT_ID }}
   SERVICE: palma-taboola
   REGION: us-central1
+  BUILD_ENV: prod
 
 jobs:
   vuanem-ns:
@@ -29,12 +30,13 @@ jobs:
 
       - name: Build and Push Container
         run: |-
-          docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }} .
-          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }}
+          docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }} --build-arg BUILD_ENV=${{ env.BUILD_ENV }} .
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}
+
       - name: Deploy to Main module to Cloud Run
         run: >-
           gcloud run deploy ${{ env.SERVICE }}
-          --image=gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{  github.sha }}
+          --image=gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE }}:${{ github.sha }}
           --concurrency=1
           --memory=4Gi
           --cpu=2
