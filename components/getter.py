@@ -102,7 +102,7 @@ class SingleDayGetter(Getter):
                 res = await r.json()
         except aiohttp.client_exceptions.ContentTypeError as e:
             if attempt < 5:
-                asyncio.sleep(2)
+                await asyncio.sleep(2)
                 return await self._get_one(session, dt, attempt + 1)
             else:
                 raise e
@@ -180,7 +180,7 @@ class CampaignFilterGetter(Getter):
                 }
         except aiohttp.client_exceptions.ContentTypeError as e:
             if attempt < 5:
-                asyncio.sleep(2)
+                await asyncio.sleep(2)
                 return await self._get_one(session, filter_, attempt + 1)
             else:
                 raise e
