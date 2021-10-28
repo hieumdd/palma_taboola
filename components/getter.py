@@ -41,7 +41,7 @@ def get_date_range(start, end):
         else:
             _start, _end = [datetime.strptime(i, DATE_FORMAT) for i in (start, end)]
     else:
-        _start, _end = [NOW - timedelta(days=36), NOW]
+        _start, _end = [NOW - timedelta(days=14), NOW]
     return _start, _end
 
 
@@ -150,7 +150,7 @@ class CampaignFilterGetter(Getter):
         ]
 
     async def _get_data(self, campaign_date):
-        connector = aiohttp.TCPConnector(limit=10)
+        connector = aiohttp.TCPConnector(limit=20)
         timeout = aiohttp.ClientTimeout(total=3600)
         async with aiohttp.ClientSession(
             connector=connector,

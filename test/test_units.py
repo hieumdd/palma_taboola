@@ -15,6 +15,7 @@ from main import main
         "CampaignSummaryBrowser",
         "CampaignSummaryOSFamily",
         "CampaignSummaryOSVersion",
+        "CampaignSummaryRegion",
     ],
 )
 @pytest.mark.parametrize(
@@ -24,7 +25,7 @@ from main import main
     ),
     [
         (None, None),
-        ("2021-08-20", "2021-09-20"),
+        ("2021-10-10", "2021-10-28"),
     ],
     ids=[
         "auto",

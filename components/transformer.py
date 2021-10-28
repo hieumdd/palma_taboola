@@ -91,6 +91,6 @@ class CampaignFilterTransformer(SingleDayTransformer):
                 "last_used_rawdata_update_time": result[
                     "last-used-rawdata-update-time"
                 ],
-            }
+            } if row else {}
             for row in rows
         ]
