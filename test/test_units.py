@@ -25,11 +25,11 @@ from main import main
     ),
     [
         (None, None),
-        ("2021-10-10", "2021-10-28"),
+        # ("2021-10-10", "2021-10-28"),
     ],
     ids=[
         "auto",
-        "manual",
+        # "manual",
     ],
 )
 def test_pipelines(table, start, end):
